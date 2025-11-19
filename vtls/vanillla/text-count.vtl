@@ -1,0 +1,28 @@
+<div class="${fieldId}_countWrapper">
+    <div id="${fieldId}-counter-text">
+        <span id="charactersRemaining-${fieldId}">$maxChar</span> characters
+    </div>
+    <div>Recommended Max $maxChar characters</div>
+</div>
+
+
+<script>
+
+    function updateCharacterCount() {
+        const textEntered = DotCustomFieldApi.get('${fieldId}') || ''; // READ A VALUE
+        const counter = textEntered.length;
+        const countRemaining = document.getElementById('charactersRemaining-${fieldId}');
+        const counterText = document.getElementById('${fieldId}-counter-text');
+        
+        countRemaining.textContent = counter;
+        counterText.style.color = counter <= $maxChar ? "#6c7389" : "red";
+    }
+
+    // Initial count
+    updateCharacterCount();
+
+    // Watch for changes
+    DotCustomFieldApi.onChangeField('${fieldId}', (value) => {
+        updateCharacterCount();
+    });
+</script>

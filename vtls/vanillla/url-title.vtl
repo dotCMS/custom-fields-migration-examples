@@ -1,4 +1,3 @@
-#** Slug Generator Custom Field V2 *#
 <script>
     const SOURCE_FIELD = 'title';
     const TARGET_FIELD = 'urlTitle';
@@ -40,7 +39,8 @@
         input.value = slug;
         currentValue = slug;
         isLocked = true;
-        DotCustomFieldApi.set(TARGET_FIELD, slug); // WRITE A VALUE
+        const field = DotCustomFieldApi.getField(TARGET_FIELD);
+        field.setValue(slug);
         document.getElementById(SUGGESTION_DIV).style.display = 'none';
     };
 
@@ -50,21 +50,23 @@
         input.value = newSlug;
         currentValue = newSlug;
         isLocked = true;
-        DotCustomFieldApi.set(TARGET_FIELD, newSlug); // WRITE A VALUE
+        const field = DotCustomFieldApi.getField(TARGET_FIELD);
+        field.setValue(newSlug);
     };
 
-    DotCustomFieldApi.ready(() => { // WAIT UNTIL ALL IS READY
+    DotCustomFieldApi.ready(() => { 
         const input = document.getElementById(SLUG_INPUT);
-        const savedValue = DotCustomFieldApi.get(TARGET_FIELD); // GET A VALUE
+        const field = DotCustomFieldApi.getField(TARGET_FIELD);
+        const savedValue = field.getValue(); 
         
         if (savedValue) {
             input.value = savedValue;
             currentValue = savedValue;
         }
 
-        DotCustomFieldApi.onChangeField(SOURCE_FIELD, value => { // LISTEN A VALUE
-                const newSlug = slugifyText(value);
-                showSuggestion(newSlug);
+        DotCustomFieldApi.onChangeField(SOURCE_FIELD, value => {
+            const newSlug = slugifyText(value);
+            showSuggestion(newSlug);
         });
     });
 </script>
@@ -73,10 +75,5 @@
     type="text" 
     id="slugInput" 
     onkeyup="handleInput()" 
-    class="dijitTextBox" 
-    style="background:#FAFAFA"
 />
-<div 
-    id="slugSuggestion" 
-    style="margin-top:8px; display:none; color:#2196F3;"
-></div>
+<div id="slugSuggestion"></div>

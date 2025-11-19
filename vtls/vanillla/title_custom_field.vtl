@@ -5,7 +5,7 @@ DotCustomFieldApi.ready(() =>{
 	const urlField = DotCustomFieldApi.getField('url');
 	const friendlyNameField = DotCustomFieldApi.getField('friendlyName');
 
-	const titleBox = document.getElementById('titleBox');
+	const titleBox = document.getElementById('${fieldId}-titleBox');
 	titleBox.value = titleField.getValue() || '';
 
 	titleBox.addEventListener('change', () =>{
@@ -23,4 +23,4 @@ DotCustomFieldApi.ready(() =>{
 });
 
 </script>
-<input id="titleBox"/>
+<input id="${fieldId}-titleBox"/>

@@ -7,9 +7,8 @@
 
 
 <script>
-
     function updateCharacterCount() {
-        const textEntered = DotCustomFieldApi.get('${fieldId}') || ''; // READ A VALUE
+        const textEntered = DotCustomFieldApi.getField('${fieldId}').getValue() || ''; // READ A VALUE
         const counter = textEntered.length;
         const countRemaining = document.getElementById('charactersRemaining-${fieldId}');
         const counterText = document.getElementById('${fieldId}-counter-text');
@@ -18,11 +17,13 @@
         counterText.style.color = counter <= $maxChar ? "#6c7389" : "red";
     }
 
-    // Initial count
-    updateCharacterCount();
+    DotCustomFieldApi.ready(() => {
+        const field = DotCustomFieldApi.getField('${fieldId}');
+        field.onChange(value => {
+            updateCharacterCount();
+        });
 
-    // Watch for changes
-    DotCustomFieldApi.onChangeField('${fieldId}', (value) => {
         updateCharacterCount();
     });
+    
 </script>

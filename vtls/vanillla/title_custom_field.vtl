@@ -1,30 +1,25 @@
 <script type="application/javascript">
 
-dojo.ready(function(){
-	
-	var titleBox=new dijit.form.TextBox({
-		name: "titleBox",
-		value: dojo.byId("title").value,
-		onChange: function() {
-			dojo.byId("title").value=this.get('value');
+DotCustomFieldApi.ready(() =>{
+	const titleField = DotCustomFieldApi.getField('title');
+	const urlField = DotCustomFieldApi.getField('url');
+	const friendlyNameField = DotCustomFieldApi.getField('friendlyName');
 
-			var url=dijit.byId('url');
-			if(url && url.get('value').trim()==='') {
-				url.set('value', 
-					this.get('value').toLowerCase().trim()
-				                     .replace(/[^a-zA-Z0-9]+/g,'-')
-				                     .replace(/-+$|^-+/g,''));
-			}
+	const titleBox = document.getElementById('titleBox');
+	titleBox.value = titleField.getValue() || '';
 
-			var fname=dijit.byId('friendlyName');
-			if(fname && fname.get('value').trim()==='') {
-				fname.set('value', this.get('value'));
-			}
-		},
-		onKeyDown: function() {
-			dojo.byId("title").value=this.get('value');
+	titleBox.addEventListener('change', () =>{
+		const value = titleBox.value;
+		const urlValue = urlField.getValue() || '';
+		if(urlValue.trim() === ''){
+			urlField.setValue(value.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,''));
 		}
-	}, "titleBox");
+
+		const friendlyNameValue = friendlyNameField.getValue() || '';
+		if(friendlyNameValue.trim() === ''){
+			friendlyNameField.setValue(value);
+		}
+	});
 });
 
 </script>

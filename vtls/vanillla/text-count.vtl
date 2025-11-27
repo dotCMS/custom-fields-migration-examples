@@ -5,10 +5,8 @@
     <div>Recommended Max $maxChar characters</div>
 </div>
 
-
 <script>
-    function updateCharacterCount() {
-        const textEntered = DotCustomFieldApi.getField('${fieldId}').getValue() || ''; // READ A VALUE
+    function updateCharacterCount(textEntered) {
         const counter = textEntered.length;
         const countRemaining = document.getElementById('charactersRemaining-${fieldId}');
         const counterText = document.getElementById('${fieldId}-counter-text');
@@ -20,10 +18,9 @@
     DotCustomFieldApi.ready(() => {
         const field = DotCustomFieldApi.getField('${fieldId}');
         field.onChange(value => {
-            updateCharacterCount();
+            updateCharacterCount(value);
         });
-
-        updateCharacterCount();
+        updateCharacterCount(field.getValue() || '');
     });
     
 </script>

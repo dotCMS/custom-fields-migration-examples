@@ -18,6 +18,16 @@
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
 
+    const applySuggestion = (slug) => {
+        const input = document.getElementById(SLUG_INPUT);
+        input.value = slug;
+        currentValue = slug;
+        isLocked = true;
+        const field = DotCustomFieldApi.getField(TARGET_FIELD);
+        field.setValue(slug);
+        document.getElementById(SUGGESTION_DIV).style.display = 'none';
+    };
+
     const showSuggestion = newSlug => {
         const suggestion = document.getElementById(SUGGESTION_DIV);
         
@@ -26,22 +36,22 @@
             return;
         }
 
-        suggestion.innerHTML = `
-            <a href="#" onclick="applySuggestion('${newSlug}'); return false">
-                Use: ${newSlug}
-            </a>
-        `;
+        // Limpiar contenido previo
+        suggestion.innerHTML = '';
+        
+        // Crear el enlace programáticamente
+        const link = document.createElement('a');
+        link.textContent = `Use: ${newSlug}`;
+        
+        // Agregar event listener en lugar de onclick
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            applySuggestion(newSlug);
+        });
+        
+        suggestion.appendChild(link);
         suggestion.style.display = 'block';
-    };
-
-    const applySuggestion = slug => {
-        const input = document.getElementById(SLUG_INPUT);
-        input.value = slug;
-        currentValue = slug;
-        isLocked = true;
-        const field = DotCustomFieldApi.getField(TARGET_FIELD);
-        field.setValue(slug);
-        document.getElementById(SUGGESTION_DIV).style.display = 'none';
+        suggestion.style.cursor = 'pointer';
     };
 
     const handleInput = () => {
@@ -56,25 +66,25 @@
 
     DotCustomFieldApi.ready(() => { 
         const input = document.getElementById(SLUG_INPUT);
-        const field = DotCustomFieldApi.getField('urlTitle');
-        const savedValue = field.getValue(); 
+        const urlTitleField = DotCustomFieldApi.getField('urlTitle');
+        const savedValue = urlTitleField.getValue(); 
         
         if (savedValue) {
             input.value = savedValue;
             currentValue = savedValue;
         }
 
-        const sourceField = DotCustomFieldApi.getField('title');
-        sourceField.onChange(value => {
+        const titleField = DotCustomFieldApi.getField('title');
+        titleField.onChange(value => {
             const newSlug = slugifyText(value);
             showSuggestion(newSlug);
         });
+        input.addEventListener('keyup', handleInput);
     });
 </script>
 
 <input 
     type="text" 
     id="${fieldId}-slugInput" 
-    onkeyup="handleInput()" 
 />
 <div id="${fieldId}-slugSuggestion"></div>

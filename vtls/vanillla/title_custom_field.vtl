@@ -8,19 +8,21 @@ DotCustomFieldApi.ready(() =>{
 	const titleBox = document.getElementById('${fieldId}-titleBox');
 	titleBox.value = titleField.getValue() || '';
 
-	titleBox.addEventListener('change', () =>{
-		const value = titleBox.value;
+	titleBox.addEventListener('blur', () => {
+		const currentTitleValue = titleBox.value;
+
 		const urlValue = urlField.getValue() || '';
 		if(urlValue.trim() === ''){
-			urlField.setValue(value.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,''));
+			const urlValue = currentTitleValue.toLowerCase().trim().replace(/[^a-zA-Z0-9]+/g,'-').replace(/-+$|^-+/g,'');
+			urlField.setValue(urlValue);
 		}
 
 		const friendlyNameValue = friendlyNameField.getValue() || '';
 		if(friendlyNameValue.trim() === ''){
-			friendlyNameField.setValue(value);
+			friendlyNameField.setValue(currentTitleValue);
 		}
 	});
 });
 
 </script>
-<input id="${fieldId}-titleBox"/>
+<input type="text" id="${fieldId}-titleBox"/>

@@ -1,30 +1,72 @@
 <style>
-  #videoResultsDiv{}
-  #myResults{padding:8px 10px 8px 10px;width:530px; height:400px;overflow-x: hidden; overflow-y: auto;}
-  #myResults ul{margin:0;padding:0;font-family:Arial, Helvetica, sans-serif;font-size:12px;line-height:16px;}
-  #myResults ul li{position:relative;display:block;list-style:none;padding:0;padding:10px 10px 20px 140px;border-bottom:1px dashed #ccc;cursor:pointer;}
-  #myResults ul li:hover{background:#c3e1eb;}
-  #myResults ul li span{display:block;position:absolute;left:10px; top:10px; width:120px; height:90px;}
-  .videoThumbnail{width: 640px;height: 380px;overflow: hidden;border: 1px solid #efefef;margin: 30px 0;padding:0;}
+  #${fieldId}-videoResultsDiv {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 20px;
+  }
+  #${fieldId}-videoResultsDiv.show {
+    display: block;
+  }
+  #${fieldId}-myResults {
+    padding: 8px 10px 8px 10px;
+    width: 530px;
+    height: 400px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  #${fieldId}-myResults ul {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+  }
+  #${fieldId}-myResults ul li {
+    position: relative;
+    display: block;
+    list-style: none;
+    padding: 10px 10px 20px 140px;
+    border-bottom: 1px dashed #ccc;
+    cursor: pointer;
+  }
+  #${fieldId}-myResults ul li:hover {
+    background: #c3e1eb;
+  }
+  #${fieldId}-myResults ul li span {
+    display: block;
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    width: 120px;
+    height: 90px;
+  }
+  .${fieldId}-videoThumbnail {
+    width: 640px;
+    height: 380px;
+    overflow: hidden;
+    border: 1px solid #efefef;
+    margin: 30px 0;
+    padding: 0;
+  }
+  .${fieldId}-videoThumbnail iframe {
+    border: 0;
+    width: 100%;
+    height: 100%;
+  }
 </style>
 
 <script type="text/javascript" src="//www.google.com/jsapi"></script>
 
 <script type="text/javascript">
+    let titleField, authorField, idField, lengthField, thumbnailSmallField, thumbnailLargeField, publishedField, urlField;
 
-	dojo.addOnLoad( function(){
-		var x = dojo.byId("thumbnailLarge").value;
-		if(x != ""){
-			var y = dojo.byId("url").value;
-            y = y.replace('watch?v=', 'embed/');
-            y = y.replace('http', 'https');
-            dijit.byId("thumbnailImage").set("content", dojo.create("iframe", {
-                "src": y + "?rel=0",
-                "style": "border: 0; width: 100%; height: 100%"
-            }));
-		}
-	});
-	
     function init() {
         gapi.client.setApiKey('${apiKey}');
     }
@@ -33,25 +75,43 @@
         return timeD.replace("PT","").replace("H",":").replace("M",":").replace("S","")
     }
 
+    function showVideoPreview(url) {
+        const thumbnailImage = document.getElementById('${fieldId}-thumbnailImage');
+        let embedUrl = url.replace('watch?v=', 'embed/');
+        embedUrl = embedUrl.replace('http', 'https');
+        
+        // Clear existing content
+        thumbnailImage.innerHTML = '';
+        
+        // Create iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = embedUrl + '?rel=0';
+        iframe.style.border = '0';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        
+        thumbnailImage.appendChild(iframe);
+    }
+
     function searchClicked(){
-		var mySearch = document.getElementById("inputSearchStrId").value;
-		if(mySearch.length < 1){
-			alert("Please Enter Search Term");
-			document.getElementById('inputSearchStrId').focus();
-		}else{
-			dijit.byId('videoResultsDiv').show();
-        	document.getElementById("myResults").innerHTML = 'Loading YouTube videos ...';
-        	gapi.client.load('youtube', 'v3', function(){
+        const mySearch = document.getElementById('${fieldId}-inputSearchStrId').value;
+        if(mySearch.length < 1){
+            alert("Please Enter Search Term");
+            document.getElementById('${fieldId}-inputSearchStrId').focus();
+        } else {
+            const videoResultsDiv = document.getElementById('${fieldId}-videoResultsDiv');
+            videoResultsDiv.classList.add('show');
+            document.getElementById('${fieldId}-myResults').innerHTML = 'Loading YouTube videos ...';
+            
+            gapi.client.load('youtube', 'v3', function(){
                 var videosRequest = gapi.client.youtube.search.list({
-                  q: mySearch,
-                  part: "id,snippet",
-                  maxResults: $maxResults, 
-                  channelId: '$!{channelId}'
+                    q: mySearch,
+                    part: "id,snippet",
+                    maxResults: $maxResults, 
+                    channelId: '$!{channelId}'
                 });
 
-
                 videosRequest.execute(function(response) {
-                    //showMyVideos(response);
                     var videos = response.items;
                     var videosIds = "";
                     for (var i = 0; i < videos.length; i++) {
@@ -64,75 +124,152 @@
                     });
 
                     listRequest.execute(function(response) {
-                        showMyVideos(response)
+                        showMyVideos(response);
                         console.log(response);
-                    })
+                    });
                 });
-
-
             });
         }
     }
 
     function showMyVideos(data){
         console.log(data);
-        var entries = data.items || [];
-        var html = ['<ul>'];
-        for (var i = 0; i < entries.length; i++)
-        {
-            var entry = entries[i];
-            var title = entry.snippet.title;
-            var id = entry.id;
-            var lnk = '//www.youtube.com/watch?v=' + entry.id;
-            var published = entry.snippet.publishedAt;
-            var length = convert_time(entry.contentDetails.duration);
-            var by = entry.snippet.channelTitle;
-            var picSm = entry.snippet.thumbnails.default.url;
-            var picLg = entry.snippet.thumbnails.high.url;
-			var passVar = " ' " + lnk + "' , '" + id + "' , '" + picSm + "' , '" + picLg + "' , '" + title + "' , '" + by + "' , '" + length + "' , '" + published + "'";
-            html.push('<li onclick=\"setFields(', passVar , ');\"><span style=\"background:url(', picSm, ') no-repeat;\"></span><b>' , title , '</b><br><b>Author: </b>', by ,'<br><b>Length: </b>', length, '<br><b>Published: </b>', published , '</li>');
+        const entries = data.items || [];
+        const myResults = document.getElementById('${fieldId}-myResults');
+        
+        // Clear previous content
+        myResults.innerHTML = '';
+        
+        const ul = document.createElement('ul');
+        
+        for (var i = 0; i < entries.length; i++) {
+            const entry = entries[i];
+            const title = entry.snippet.title;
+            const id = entry.id;
+            const lnk = '//www.youtube.com/watch?v=' + entry.id;
+            const published = entry.snippet.publishedAt;
+            const length = convert_time(entry.contentDetails.duration);
+            const by = entry.snippet.channelTitle;
+            const picSm = entry.snippet.thumbnails.default.url;
+            const picLg = entry.snippet.thumbnails.high.url;
+            
+            const li = document.createElement('li');
+            
+            const span = document.createElement('span');
+            span.style.backgroundImage = 'url(' + picSm + ')';
+            span.style.backgroundRepeat = 'no-repeat';
+            
+            const titleB = document.createElement('b');
+            titleB.textContent = title;
+            
+            const authorLabel = document.createElement('b');
+            authorLabel.textContent = 'Author: ';
+            const authorText = document.createTextNode(by);
+            
+            const lengthLabel = document.createElement('b');
+            lengthLabel.textContent = 'Length: ';
+            const lengthText = document.createTextNode(length);
+            
+            const publishedLabel = document.createElement('b');
+            publishedLabel.textContent = 'Published: ';
+            const publishedText = document.createTextNode(published);
+            
+            li.appendChild(span);
+            li.appendChild(titleB);
+            li.appendChild(document.createElement('br'));
+            li.appendChild(authorLabel);
+            li.appendChild(authorText);
+            li.appendChild(document.createElement('br'));
+            li.appendChild(lengthLabel);
+            li.appendChild(lengthText);
+            li.appendChild(document.createElement('br'));
+            li.appendChild(publishedLabel);
+            li.appendChild(publishedText);
+            
+            // Add click handler
+            li.addEventListener('click', function() {
+                setFields(lnk, id, picSm, picLg, title, by, length, published);
+            });
+            
+            ul.appendChild(li);
         }
-        html.push('</ul>');
-        document.getElementById('myResults').innerHTML = html.join('');  
+        
+        myResults.appendChild(ul);
     }
     
-    
-    function setFields(lnk,id,picSm,picLg,title,by,length,published){
-    	dijit.byId('videoResultsDiv').hide();
-    	dojo.byId("title").value=title;
-    	dojo.byId("author").value=by;
-        dojo.byId("id").value=id;
-    	dojo.byId("length").value=length;
-    	dojo.byId("thumbnailSmall").value=picSm;
-    	dojo.byId("thumbnailLarge").value=picLg;
-    	dojo.byId("published").value=published;
-    	dojo.byId("url").value=lnk.trim();
-    	dojo.byId("inputSearchStrId").value="";
+    function setFields(lnk, id, picSm, picLg, title, by, length, published){
+        const videoResultsDiv = document.getElementById('${fieldId}-videoResultsDiv');
+        videoResultsDiv.classList.remove('show');
+        
+        titleField.setValue(title);
+        authorField.setValue(by);
+        idField.setValue(id);
+        lengthField.setValue(length);
+        thumbnailSmallField.setValue(picSm);
+        thumbnailLargeField.setValue(picLg);
+        publishedField.setValue(published);
+        urlField.setValue(lnk.trim());
+        
+        document.getElementById('${fieldId}-inputSearchStrId').value = "";
 
-        var y = dojo.byId("url").value;
-        y = y.replace('watch?v=', 'embed/');
-        y = y.replace('http', 'https');
-        dijit.byId("thumbnailImage").set("content", dojo.create("iframe", {
-            "src": y + "?rel=0",
-            "style": "border: 0; width: 100%; height: 100%"
-        }));
+        const urlValue = urlField.getValue();
+        showVideoPreview(urlValue);
     }
 
+    DotCustomFieldApi.ready(() => {
+        // Get field references
+        titleField = DotCustomFieldApi.getField('title');
+        authorField = DotCustomFieldApi.getField('author');
+        idField = DotCustomFieldApi.getField('id');
+        lengthField = DotCustomFieldApi.getField('length');
+        thumbnailSmallField = DotCustomFieldApi.getField('thumbnailSmall');
+        thumbnailLargeField = DotCustomFieldApi.getField('thumbnailLarge');
+        publishedField = DotCustomFieldApi.getField('published');
+        urlField = DotCustomFieldApi.getField('url');
+
+        // Initialize video preview if thumbnailLarge has a value
+        const thumbnailLargeValue = thumbnailLargeField.getValue();
+        if(thumbnailLargeValue && thumbnailLargeValue !== ""){
+            const urlValue = urlField.getValue();
+            if(urlValue && urlValue !== "") {
+                showVideoPreview(urlValue);
+            }
+        }
+
+        // Add event listener to search button
+        const searchButton = document.getElementById('${fieldId}-searchButton');
+        if(searchButton) {
+            searchButton.addEventListener('click', searchClicked);
+        }
+
+        // Add event listener to search input for Enter key
+        const searchInput = document.getElementById('${fieldId}-inputSearchStrId');
+        if(searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if(e.key === 'Enter') {
+                    searchClicked();
+                }
+            });
+        }
+    });
 </script>
-
 
 <div>
     <div>                  
-        <input name="searchStr" id="inputSearchStrId" type="text" dojoType="dijit.form.TextBox" style="width:400px;" placeHolder="Search for Videos on YouTube" />
-    	<button dojoType="dijit.form.Button" onClick="searchClicked()" iconClass="searchIcon">Search</button>
+        <input 
+            name="searchStr" 
+            id="${fieldId}-inputSearchStrId" 
+            type="text" 
+            placeholder="Search for Videos on YouTube" 
+        />
+        <button id="${fieldId}-searchButton">Search</button>
     </div>
     
-    <div id="thumbnailImage" class="videoThumbnail" data-dojo-type="dijit/layout/ContentPane"></div>
+    <div id="${fieldId}-thumbnailImage" class="${fieldId}-videoThumbnail"></div>
     
-    <div id="videoResultsDiv" dojoType="dijit.Dialog" style="display: none">
-		<div id="myResults"></div>
+    <div id="${fieldId}-videoResultsDiv">
+        <div id="${fieldId}-myResults"></div>
     </div>
-    
 </div>
 
 <script src="//apis.google.com/js/client.js?onload=init"></script>

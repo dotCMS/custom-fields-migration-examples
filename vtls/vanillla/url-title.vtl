@@ -1,8 +1,7 @@
-#** Slug Generator Custom Field V2 *#
 <script>
     const TARGET_FIELD = 'urlTitle';
-    const SLUG_INPUT = '${fieldId}-slugInput';
-    const SUGGESTION_DIV = '${fieldId}-slugSuggestion';
+    const SLUG_INPUT = 'slugInput';
+    const SUGGESTION_DIV = 'slugSuggestion';
 
     let isLocked = false;
     let currentValue = '';
@@ -85,6 +84,6 @@
 
 <input 
     type="text" 
-    id="${fieldId}-slugInput" 
+    id="slugInput" 
 />
-<div id="${fieldId}-slugSuggestion"></div>
+<div id="slugSuggestion"></div>

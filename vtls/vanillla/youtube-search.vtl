@@ -1,64 +1,113 @@
 <style>
-  #${fieldId}-videoResultsDiv {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border: 1px solid #ccc;
+  #videoResultsDiv::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0.75;
+  }
+  #videoResultsDiv {
+    max-width: 800px;
+    width: 90vw;
+    border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    padding: 20px;
   }
-  #${fieldId}-videoResultsDiv.show {
-    display: block;
-  }
-  #${fieldId}-myResults {
-    padding: 8px 10px 8px 10px;
-    width: 530px;
-    height: 400px;
+  #myResults {
+    padding: 0;
+    max-height: 70vh;
     overflow-x: hidden;
     overflow-y: auto;
   }
-  #${fieldId}-myResults ul {
+  #myResults ul {
     margin: 0;
     padding: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 12px;
-    line-height: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
   }
-  #${fieldId}-myResults ul li {
-    position: relative;
-    display: block;
+  #myResults ul li {
+    display: flex;
+    align-items: flex-start;
     list-style: none;
-    padding: 10px 10px 20px 140px;
-    border-bottom: 1px dashed #ccc;
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
     cursor: pointer;
+    transition: background-color 0.2s ease;
+    gap: 12px;
   }
-  #${fieldId}-myResults ul li:hover {
-    background: #c3e1eb;
+  #myResults ul li:last-child {
+    border-bottom: none;
   }
-  #${fieldId}-myResults ul li span {
-    display: block;
-    position: absolute;
-    left: 10px;
-    top: 10px;
-    width: 120px;
+  #myResults ul li:hover {
+    background: #f5f5f5;
+  }
+  #myResults ul li .video-thumbnail {
+    flex-shrink: 0;
+    width: 160px;
     height: 90px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #000;
   }
-  .${fieldId}-videoThumbnail {
-    width: 640px;
-    height: 380px;
+  #myResults ul li .video-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  #myResults ul li .video-info {
+    flex: 1;
+    min-width: 0;
+  }
+  #myResults ul li .video-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #myResults ul li .video-meta {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  #myResults ul li .video-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #myResults ul li .video-meta b {
+    font-weight: 600;
+    color: #555;
+  }
+  #closeDialogBtn:hover {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+  .videoThumbnail {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    height: 0;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio (9/16 = 0.5625) */
     overflow: hidden;
     border: 1px solid #efefef;
     margin: 30px 0;
-    padding: 0;
+    background-color: #000;
+    display: none; /* Hidden by default, shown only when video is selected */
+    box-sizing: border-box;
   }
-  .${fieldId}-videoThumbnail iframe {
+  .videoThumbnail iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
     border: 0;
     width: 100%;
     height: 100%;
+    display: block;
   }
 </style>
 
@@ -76,32 +125,83 @@
     }
 
     function showVideoPreview(url) {
-        const thumbnailImage = document.getElementById('${fieldId}-thumbnailImage');
-        let embedUrl = url.replace('watch?v=', 'embed/');
-        embedUrl = embedUrl.replace('http', 'https');
+        const thumbnailImage = document.getElementById('thumbnailImage');
+        
+        // Validate URL - check if it's empty, null, undefined, or doesn't contain youtube
+        if (!url || url.trim() === '' || (!url.includes('youtube.com') && !url.includes('youtu.be'))) {
+            // Hide the container if no valid URL
+            thumbnailImage.style.display = 'none';
+            thumbnailImage.innerHTML = '';
+            return;
+        }
+        
+        // Show the container
+        thumbnailImage.style.display = 'block';
+        
+        // Extract video ID and build embed URL
+        let videoId = '';
+        let embedUrl = '';
+        
+        // Normalize URL - ensure it starts with https://
+        let normalizedUrl = url.trim();
+        if (normalizedUrl.startsWith('//')) {
+            normalizedUrl = 'https:' + normalizedUrl;
+        } else if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+            normalizedUrl = 'https://' + normalizedUrl;
+        }
+        
+        // Extract video ID from different URL formats
+        if (normalizedUrl.includes('youtube.com/watch?v=')) {
+            videoId = normalizedUrl.split('watch?v=')[1].split('&')[0];
+        } else if (normalizedUrl.includes('youtube.com/embed/')) {
+            videoId = normalizedUrl.split('embed/')[1].split('?')[0];
+        } else if (normalizedUrl.includes('youtu.be/')) {
+            videoId = normalizedUrl.split('youtu.be/')[1].split('?')[0];
+        } else if (normalizedUrl.includes('youtube.com/v/')) {
+            videoId = normalizedUrl.split('v/')[1].split('?')[0];
+        }
+        
+        // Build embed URL
+        if (videoId) {
+            embedUrl = 'https://www.youtube.com/embed/' + videoId + '?rel=0';
+        } else {
+            // Fallback to old method if extraction fails
+            embedUrl = normalizedUrl.replace('watch?v=', 'embed/');
+            embedUrl = embedUrl.replace('youtu.be/', 'youtube.com/embed/');
+            embedUrl = embedUrl.replace('http://', 'https://');
+            if (!embedUrl.includes('embed/')) {
+                // If still no embed URL, hide container
+                thumbnailImage.style.display = 'none';
+                thumbnailImage.innerHTML = '';
+                return;
+            }
+            embedUrl += (embedUrl.includes('?') ? '&' : '?') + 'rel=0';
+        }
         
         // Clear existing content
         thumbnailImage.innerHTML = '';
         
         // Create iframe
         const iframe = document.createElement('iframe');
-        iframe.src = embedUrl + '?rel=0';
+        iframe.src = embedUrl;
         iframe.style.border = '0';
         iframe.style.width = '100%';
         iframe.style.height = '100%';
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
         
         thumbnailImage.appendChild(iframe);
     }
 
     function searchClicked(){
-        const mySearch = document.getElementById('${fieldId}-inputSearchStrId').value;
+        const mySearch = document.getElementById('inputSearchStrId').value;
         if(mySearch.length < 1){
             alert("Please Enter Search Term");
-            document.getElementById('${fieldId}-inputSearchStrId').focus();
+            document.getElementById('inputSearchStrId').focus();
         } else {
-            const videoResultsDiv = document.getElementById('${fieldId}-videoResultsDiv');
-            videoResultsDiv.classList.add('show');
-            document.getElementById('${fieldId}-myResults').innerHTML = 'Loading YouTube videos ...';
+            const videoResultsDiv = document.getElementById('videoResultsDiv');
+            videoResultsDiv.showModal();
+            document.getElementById('myResults').innerHTML = 'Loading YouTube videos ...';
             
             gapi.client.load('youtube', 'v3', function(){
                 var videosRequest = gapi.client.youtube.search.list({
@@ -135,10 +235,15 @@
     function showMyVideos(data){
         console.log(data);
         const entries = data.items || [];
-        const myResults = document.getElementById('${fieldId}-myResults');
+        const myResults = document.getElementById('myResults');
         
         // Clear previous content
         myResults.innerHTML = '';
+        
+        if (entries.length === 0) {
+            myResults.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">No videos found.</p>';
+            return;
+        }
         
         const ul = document.createElement('ul');
         
@@ -150,41 +255,66 @@
             const published = entry.snippet.publishedAt;
             const length = convert_time(entry.contentDetails.duration);
             const by = entry.snippet.channelTitle;
+            // Use medium thumbnail if available, otherwise default
+            const thumbnail = entry.snippet.thumbnails.medium ? entry.snippet.thumbnails.medium.url : 
+                             (entry.snippet.thumbnails.high ? entry.snippet.thumbnails.high.url : entry.snippet.thumbnails.default.url);
             const picSm = entry.snippet.thumbnails.default.url;
-            const picLg = entry.snippet.thumbnails.high.url;
+            const picLg = entry.snippet.thumbnails.high ? entry.snippet.thumbnails.high.url : entry.snippet.thumbnails.default.url;
             
             const li = document.createElement('li');
             
-            const span = document.createElement('span');
-            span.style.backgroundImage = 'url(' + picSm + ')';
-            span.style.backgroundRepeat = 'no-repeat';
+            // Create thumbnail container with image
+            const thumbnailDiv = document.createElement('div');
+            thumbnailDiv.className = 'video-thumbnail';
+            const img = document.createElement('img');
+            img.src = thumbnail;
+            img.alt = title;
+            img.loading = 'lazy';
+            thumbnailDiv.appendChild(img);
             
-            const titleB = document.createElement('b');
-            titleB.textContent = title;
+            // Create video info container
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'video-info';
             
+            // Title
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'video-title';
+            titleDiv.textContent = title;
+            
+            // Meta information
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'video-meta';
+            
+            // Author
+            const authorSpan = document.createElement('span');
             const authorLabel = document.createElement('b');
-            authorLabel.textContent = 'Author: ';
-            const authorText = document.createTextNode(by);
+            authorLabel.textContent = 'Author:';
+            authorSpan.appendChild(authorLabel);
+            authorSpan.appendChild(document.createTextNode(' ' + by));
+            metaDiv.appendChild(authorSpan);
             
+            // Length
+            const lengthSpan = document.createElement('span');
             const lengthLabel = document.createElement('b');
-            lengthLabel.textContent = 'Length: ';
-            const lengthText = document.createTextNode(length);
+            lengthLabel.textContent = 'Length:';
+            lengthSpan.appendChild(lengthLabel);
+            lengthSpan.appendChild(document.createTextNode(' ' + length));
+            metaDiv.appendChild(lengthSpan);
             
+            // Published date
+            const publishedSpan = document.createElement('span');
             const publishedLabel = document.createElement('b');
-            publishedLabel.textContent = 'Published: ';
-            const publishedText = document.createTextNode(published);
+            publishedLabel.textContent = 'Published:';
+            publishedSpan.appendChild(publishedLabel);
+            const publishedDate = new Date(published).toLocaleDateString();
+            publishedSpan.appendChild(document.createTextNode(' ' + publishedDate));
+            metaDiv.appendChild(publishedSpan);
             
-            li.appendChild(span);
-            li.appendChild(titleB);
-            li.appendChild(document.createElement('br'));
-            li.appendChild(authorLabel);
-            li.appendChild(authorText);
-            li.appendChild(document.createElement('br'));
-            li.appendChild(lengthLabel);
-            li.appendChild(lengthText);
-            li.appendChild(document.createElement('br'));
-            li.appendChild(publishedLabel);
-            li.appendChild(publishedText);
+            // Assemble the structure
+            infoDiv.appendChild(titleDiv);
+            infoDiv.appendChild(metaDiv);
+            li.appendChild(thumbnailDiv);
+            li.appendChild(infoDiv);
             
             // Add click handler
             li.addEventListener('click', function() {
@@ -198,8 +328,8 @@
     }
     
     function setFields(lnk, id, picSm, picLg, title, by, length, published){
-        const videoResultsDiv = document.getElementById('${fieldId}-videoResultsDiv');
-        videoResultsDiv.classList.remove('show');
+        const videoResultsDiv = document.getElementById('videoResultsDiv');
+        videoResultsDiv.close();
         
         titleField.setValue(title);
         authorField.setValue(by);
@@ -210,7 +340,7 @@
         publishedField.setValue(published);
         urlField.setValue(lnk.trim());
         
-        document.getElementById('${fieldId}-inputSearchStrId').value = "";
+        document.getElementById('inputSearchStrId').value = "";
 
         const urlValue = urlField.getValue();
         showVideoPreview(urlValue);
@@ -227,27 +357,50 @@
         publishedField = DotCustomFieldApi.getField('published');
         urlField = DotCustomFieldApi.getField('url');
 
-        // Initialize video preview if thumbnailLarge has a value
-        const thumbnailLargeValue = thumbnailLargeField.getValue();
-        if(thumbnailLargeValue && thumbnailLargeValue !== ""){
-            const urlValue = urlField.getValue();
-            if(urlValue && urlValue !== "") {
-                showVideoPreview(urlValue);
+        // Initialize video preview only if URL has a valid value
+        const urlValue = urlField.getValue();
+        if(urlValue && urlValue.trim() !== "" && (urlValue.includes('youtube.com') || urlValue.includes('youtu.be'))) {
+            showVideoPreview(urlValue);
+        } else {
+            // Hide the container if no valid URL
+            const thumbnailImage = document.getElementById('thumbnailImage');
+            if(thumbnailImage) {
+                thumbnailImage.style.display = 'none';
+                thumbnailImage.innerHTML = '';
             }
         }
 
         // Add event listener to search button
-        const searchButton = document.getElementById('${fieldId}-searchButton');
+        const searchButton = document.getElementById('searchButton');
         if(searchButton) {
             searchButton.addEventListener('click', searchClicked);
         }
 
         // Add event listener to search input for Enter key
-        const searchInput = document.getElementById('${fieldId}-inputSearchStrId');
+        const searchInput = document.getElementById('inputSearchStrId');
         if(searchInput) {
             searchInput.addEventListener('keypress', function(e) {
                 if(e.key === 'Enter') {
                     searchClicked();
+                }
+            });
+        }
+
+        // Add event listener to close dialog button
+        const closeDialogBtn = document.getElementById('closeDialogBtn');
+        if(closeDialogBtn) {
+            closeDialogBtn.addEventListener('click', function() {
+                const videoResultsDiv = document.getElementById('videoResultsDiv');
+                videoResultsDiv.close();
+            });
+        }
+
+        // Close dialog when clicking outside (on backdrop)
+        const videoResultsDiv = document.getElementById('videoResultsDiv');
+        if(videoResultsDiv) {
+            videoResultsDiv.addEventListener('click', function(e) {
+                if(e.target === videoResultsDiv) {
+                    videoResultsDiv.close();
                 }
             });
         }
@@ -258,18 +411,22 @@
     <div>                  
         <input 
             name="searchStr" 
-            id="${fieldId}-inputSearchStrId" 
+            id="inputSearchStrId" 
             type="text" 
             placeholder="Search for Videos on YouTube" 
         />
-        <button id="${fieldId}-searchButton">Search</button>
+        <button id="searchButton">Search</button>
     </div>
     
-    <div id="${fieldId}-thumbnailImage" class="${fieldId}-videoThumbnail"></div>
+    <div id="thumbnailImage" class="videoThumbnail"></div>
     
-    <div id="${fieldId}-videoResultsDiv">
-        <div id="${fieldId}-myResults"></div>
-    </div>
+    <dialog id="videoResultsDiv">
+        <div style="padding: 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #333;">Select a Video</h3>
+            <button id="closeDialogBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Close">×</button>
+        </div>
+        <div id="myResults"></div>
+    </dialog>
 </div>
 
 <script src="//apis.google.com/js/client.js?onload=init"></script>

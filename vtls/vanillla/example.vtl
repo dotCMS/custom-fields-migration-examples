@@ -1,0 +1,43 @@
+<script>
+
+  function updateDisplayURLTitle(titleValue, urlTitleFieldName, displayElement){
+    
+    // get the title entered by the user
+    if(!titleValue || titleValue.length == 0){
+      displayElement.innerHTML = "";
+      DotCustomFieldApi.set(urlTitleFieldName, "");
+      return;
+    }
+
+    var urlTitle = titleValue.toLowerCase();
+    urlTitle= urlTitle.replace(/^\s+|\s+$/g,"");
+    urlTitle = urlTitle.replace(/[^a-zA-Z 0-9]+/g,' ');  
+    urlTitle = urlTitle.replace(/\s/g, "-");
+    // Replace multiple consecutive dashes with a single dash
+    urlTitle = urlTitle.replace(/-{2,}/g, '-');
+    // Remove trailing dashes
+    urlTitle = urlTitle.replace(/-+$/, '');
+    // Remove leading dashes
+    urlTitle = urlTitle.replace(/^-+/, '');
+
+    displayElement.innerHTML = urlTitle;
+    DotCustomFieldApi.set(urlTitleFieldName, urlTitle);
+  }
+
+  DotCustomFieldApi.ready(() => {
+    const titleFieldName = '$cusFieldVarName';
+    const urlTitleFieldName = 'urltitle';
+    const displayElement = document.getElementById("displayURLTitle");
+
+    // Initial update
+    const initialTitleValue = DotCustomFieldApi.get(titleFieldName) || '';
+    updateDisplayURLTitle(initialTitleValue, urlTitleFieldName, displayElement);
+
+    // Watch for changes
+    DotCustomFieldApi.onChangeField(titleFieldName, value => {
+      updateDisplayURLTitle(value || '', urlTitleFieldName, displayElement);
+    });
+  });
+
+</script>
+<div id="displayURLTitle" style="height:20px"> </div>

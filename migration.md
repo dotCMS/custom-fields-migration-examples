@@ -373,6 +373,64 @@ For elements with `dojoType="dijit.Dialog"`, use the native HTML `<dialog>` elem
 </script>
 ```
 
+### 11. File and Page Browser Dialog
+
+```html
+<script type="application/javascript">
+    DotCustomFieldApi.ready(() => {
+        // Select a Page
+        const pageSelectorModal = bridge.openBrowserModal({
+            header: 'Select a Page',
+            mimeTypes: ['application/dotpage'],
+            onClose: (result) => console.log(result)
+        });
+        pageSelectorModal.close(); // close the dialog programmatically
+
+        // Select an Image
+        const imageSelectorModal = bridge.openBrowserModal({
+            header: 'Select an Image',
+            mimeTypes: ['image'],
+            onClose: (result) => console.log(result)
+        });
+        imageSelectorModal.close(); // close the dialog programmatically
+            
+        // Select a File
+        const fileSelectorModal = bridge.openBrowserModal({
+            header: 'Select a File',
+            includeDotAssets: true,
+            onClose: (result) => console.log(result)
+        });
+        fileSelectorModal.close(); // close the dialog programmatically
+    }); 
+</script>
+```
+
+**Old way (deprecated):**
+```html
+<script type="application/javascript">
+	dojo.require('dotcms.dijit.FileBrowserDialog');
+	function browseRedirectPage() {
+		pageSelector.show();
+	}
+</script>
+<div dojoAttachPoint="fileBrowser" jsId="pageSelector" onFileSelected="redirectPageSelected" 
+     mimeTypes="application/dotpage" dojoType="dotcms.dijit.FileBrowserDialog"></div>
+```
+
+```html
+<script type="application/javascript">
+  DotCustomFieldApi.ready(() => {
+
+    const fileSelectorModal = DotCustomFieldApi.openFileSelector({
+        onClose: (result) => {
+            console.log(result);
+        }
+    })
+    fileSelectorModal.close(); // close the dialog programmatically
+  });
+</script>
+```
+
 ## Best Practices
 
 ### Code Organization

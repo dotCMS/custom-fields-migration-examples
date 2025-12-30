@@ -1,82 +1,87 @@
-#** Slug Generator Custom Field V2 *#
 <script>
-    const SOURCE_FIELD = 'title';
-    const TARGET_FIELD = 'urlTitle';
-    const SLUG_INPUT = 'slugInput';
-    const SUGGESTION_DIV = 'slugSuggestion';
+  const TARGET_FIELD = "urlTitle";
+  const SLUG_INPUT = "slugInput";
+  const SUGGESTION_DIV = "slugSuggestion";
 
-    let isLocked = false;
-    let currentValue = '';
+  let isLocked = false;
+  let currentValue = "";
 
-    const slugifyText = text => text
-        .toLowerCase()
-        .replace(/[àáäâ]/g, 'a')
-        .replace(/[èéëê]/g, 'e')
-        .replace(/[ìíïî]/g, 'i')
-        .replace(/[òóöô]/g, 'o')
-        .replace(/[ùúüû]/g, 'u')
-        .replace(/[ñ]/g, 'n')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+  const slugifyText = (text) =>
+    text
+      .toLowerCase()
+      .replace(/[àáäâ]/g, "a")
+      .replace(/[èéëê]/g, "e")
+      .replace(/[ìíïî]/g, "i")
+      .replace(/[òóöô]/g, "o")
+      .replace(/[ùúüû]/g, "u")
+      .replace(/[ñ]/g, "n")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
 
-    const showSuggestion = newSlug => {
-        const suggestion = document.getElementById(SUGGESTION_DIV);
-        
-        if (!newSlug || newSlug === currentValue) {
-            suggestion.style.display = 'none';
-            return;
-        }
+  const applySuggestion = (slug) => {
+    const input = document.getElementById(SLUG_INPUT);
+    input.value = slug;
+    currentValue = slug;
+    isLocked = true;
+    const field = DotCustomFieldApi.getField(TARGET_FIELD);
+    field.setValue(slug);
+    document.getElementById(SUGGESTION_DIV).style.display = "none";
+  };
 
-        suggestion.innerHTML = `
-            <a href="#" onclick="applySuggestion('${newSlug}'); return false">
-                Use: ${newSlug}
-            </a>
-        `;
-        suggestion.style.display = 'block';
-    };
+  const showSuggestion = (newSlug) => {
+    const suggestion = document.getElementById(SUGGESTION_DIV);
 
-    const applySuggestion = slug => {
-        const input = document.getElementById(SLUG_INPUT);
-        input.value = slug;
-        currentValue = slug;
-        isLocked = true;
-        DotCustomFieldApi.set(TARGET_FIELD, slug); // WRITE A VALUE
-        document.getElementById(SUGGESTION_DIV).style.display = 'none';
-    };
+    if (!newSlug || newSlug === currentValue) {
+      suggestion.style.display = "none";
+      return;
+    }
 
-    const handleInput = () => {
-        const input = document.getElementById(SLUG_INPUT);
-        const newSlug = slugifyText(input.value);
-        input.value = newSlug;
-        currentValue = newSlug;
-        isLocked = true;
-        DotCustomFieldApi.set(TARGET_FIELD, newSlug); // WRITE A VALUE
-    };
+    // Limpiar contenido previo
+    suggestion.innerHTML = "";
 
-    DotCustomFieldApi.ready(() => { // WAIT UNTIL ALL IS READY
-        const input = document.getElementById(SLUG_INPUT);
-        const savedValue = DotCustomFieldApi.get(TARGET_FIELD); // GET A VALUE
-        
-        if (savedValue) {
-            input.value = savedValue;
-            currentValue = savedValue;
-        }
+    // Crear el enlace programáticamente
+    const link = document.createElement("a");
+    link.textContent = `Use: ${newSlug}`;
 
-        DotCustomFieldApi.onChangeField(SOURCE_FIELD, value => { // LISTEN A VALUE
-                const newSlug = slugifyText(value);
-                showSuggestion(newSlug);
-        });
+    // Agregar event listener en lugar de onclick
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      applySuggestion(newSlug);
     });
+
+    suggestion.appendChild(link);
+    suggestion.style.display = "block";
+    suggestion.style.cursor = "pointer";
+  };
+
+  const handleInput = () => {
+    const input = document.getElementById(SLUG_INPUT);
+    const newSlug = slugifyText(input.value);
+    input.value = newSlug;
+    currentValue = newSlug;
+    isLocked = true;
+    const field = DotCustomFieldApi.getField(TARGET_FIELD);
+    field.setValue(newSlug);
+  };
+
+  DotCustomFieldApi.ready(() => {
+    const input = document.getElementById(SLUG_INPUT);
+    const urlTitleField = DotCustomFieldApi.getField("urlTitle");
+    const savedValue = urlTitleField.getValue();
+
+    if (savedValue) {
+      input.value = savedValue;
+      currentValue = savedValue;
+    }
+
+    const titleField = DotCustomFieldApi.getField("title");
+    titleField.onChange((value) => {
+      const newSlug = slugifyText(value);
+      showSuggestion(newSlug);
+    });
+    input.addEventListener("keyup", handleInput);
+  });
 </script>
 
-<input 
-    type="text" 
-    id="slugInput" 
-    onkeyup="handleInput()" 
-    class="dijitTextBox" 
-    style="background:#FAFAFA"
-/>
-<div 
-    id="slugSuggestion" 
-    style="margin-top:8px; display:none; color:#2196F3;"
-></div>
+<input type="text" id="slugInput" />
+<div id="slugSuggestion"></div>
